@@ -11,14 +11,14 @@
 * White:    255:255:255
 ]]--
 color_darkred = {}
-color_darkred.red = 138
-color_darkred.green = 76
-color_darkred.blue = 88
+color_darkred.red = 0.72 -- 138
+color_darkred.green = 0.13 -- 76
+color_darkred.blue = 0.11 -- 88
 
 color_red = {}
-color_red.red = 217
-color_red.green = 98
-color_red.blue = 117
+color_red.red = 0.85 -- 217
+color_red.green = 0.38 -- 98
+color_red.blue = 0.45 -- 117
 
 color_roze = {}
 color_roze.red = 230
@@ -35,6 +35,8 @@ color_blue.blue = 115
 -- 2 highscore
 -- 3 game
 state = 1
+
+score = 0
 
 grid = {}
 for i=1, 10 do
@@ -70,23 +72,46 @@ function love.load()
 
 
     backhs_image = love.graphics.newImage("img/download.png")
+
+    -- sound for when pieces "block"
+    sound_block = love.audio.newSource("sound/block.wav", "static")
+    -- sound for when pieces move
+    sound_move = love.audio.newSource("sound/move.wav", "static")
+
+    -- main music
+    sound_main = love.audio.newSource("sound/folk1.mid", "stream")
+    sound_main:play()
 end
 
 ts = 0
+scale = 0.2
+nb_ticks = 0
 function love.update(dt)
-    ts = ts + dt
-    if ts > 10 then 
-        update_state()
+    if state == 1 then
     end
-    print(string.format("ts #%d ", ts))
+    if state == 3 then
+        sound_main:stop()
+
+        ts = ts + dt
+        while ts > scale do 
+            nb_ticks = nb_ticks + 1
+            ts = ts - scale
+        end
+        if nb_ticks > 3 then
+            nb_ticks = 0
+            update_state()
+        end
+    end
 end
 
 function piece_blocked()
     if block.y == 1 then
         return true
-    else
-        return false
     end
+    if grid[block.x][block.y-1] == 1 then
+        return true
+    end
+    return false
 end
 
 function update_state()
@@ -94,31 +119,48 @@ function update_state()
         grid[block.x][block.y] = 1
         block.x = 5
         block.y = 20
+        sound_block:play()
     else
         block.y = block.y - 1
+        sound_move:play()
     end
 end
 
 function love.keypressed(key)
-
+    local moved = false
     if key == "up" then
         block.y = block.y + 1
+        moved = true
     elseif key == "down" then
         block.y = block.y - 1
     elseif key == "left" then
-        block.x = block.x - 1
+        block.x = math.max(block.x - 1, 1)
     elseif key == "right" then
-        block.x = block.x + 1
+        block.x = math.min(block.x + 1, 10)
+        moved = true
+    end
+    if moved then
+        sound_move:play()
     end
 
     -- debug
     if key == "a" then
         state = 1
+        sound_main:play()
     elseif key == "z" then
         state = 2
     elseif key == "e" then
         state = 3
     end
+
+    if key == "p" then
+        if pause then
+            pause = false
+        else
+            pause = true
+        end
+    end
+    
 end
 
 function love.draw()
@@ -163,6 +205,7 @@ local backhs_split = 380
 local backhs_thickness = 10
 function draw_high_scores()
     -- background
+    love.graphics.setColor(255,255,255)
     love.graphics.draw(backhs_image, 0, 0)
 
     -- stats background
@@ -214,17 +257,11 @@ function draw_game()
     end
 
     -- current block
-    love.graphics.setColor(color_blue.red, color_blue.green, color_blue.blue)
-    love.graphics.rectangle("fill",
-        (640-board_width)/2 + board_width_blocks*block.x - board_width_blocks,
-        50 + board_height - board_height_blocks*block.y, 
-        board_width_blocks, board_height_blocks)
+    --love.graphics.setColor(color_blue.red, color_blue.green, color_blue.blue)
+    --love.graphics.rectangle("fill",
+    --    (640-board_width)/2 + board_width_blocks*block.x - board_width_blocks,
+    --    50 + board_height - board_height_blocks*block.y, 
+    --    board_width_blocks, board_height_blocks)
 
-    love.graphics.setColor(255,255,255)
-end
-
-function love.gamepadreleased( joystick, button )
-    local name = joystick:getName()
-    local index = joystick:getConnectedIndex()
-    print(string.format("Changing active gamepad to #%d '%s'. button = %s", index, name, button))
+    love.graphics.setColor(1,1,1)
 end
