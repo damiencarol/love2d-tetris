@@ -78,6 +78,9 @@ function love.load()
     -- sound for when pieces move
     sound_move = love.audio.newSource("sound/move.wav", "static")
 
+    -- sound for when lines
+    sound_line = love.audio.newSource("sound/line.wav", "static")
+
     -- main music
     sound_main = love.audio.newSource("sound/folk1.mid", "stream")
     sound_main:play()
@@ -100,8 +103,28 @@ function love.update(dt)
         if nb_ticks > 3 then
             nb_ticks = 0
             update_state()
+
+            if has_lines() then
+                --sound_line:play()
+                --score = score + 400
+            end
         end
     end
+end
+
+function has_lines()
+    for j=1, 20 do
+        local line = true
+        for i=1, 10 do
+            if grid[i][j] == 0 then
+                line = false
+            end
+        end
+        if line then
+            return true
+        end
+    end
+    return false
 end
 
 function piece_blocked()
@@ -134,9 +157,13 @@ function love.keypressed(key)
         block.y = block.y + 1
         moved = true
     elseif key == "down" then
-        block.y = block.y - 1
+        if not piece_blocked() then
+            block.y = block.y - 1
+            moved = true
+        end
     elseif key == "left" then
         block.x = math.max(block.x - 1, 1)
+        moved = true
     elseif key == "right" then
         block.x = math.min(block.x + 1, 10)
         moved = true
